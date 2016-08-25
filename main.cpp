@@ -10,7 +10,7 @@ SimpleMbedClient client;
 
 static DigitalOut led(LED1);
 static DigitalOut blinkLed(LED2);
-static InterruptIn btn(PTA1);
+static InterruptIn btn(PTA13);
 
 static DigitalOut boosten(PTC13, 1); // oled power enable
 static Adafruit_SSD1351 oled(PTB20, PTE6, PTD15, PTB21, PTB22); // Hexiwear pins for SPI bus OLED (CS, RS, DC, SCK, MOSI, MISO);
