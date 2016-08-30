@@ -31,23 +31,27 @@ void lcdTextUpdated(string v) {
     oled.printf(v.c_str());
 }
 
+void lcdColorUpdated(int v); // fwd declaration
+
+SimpleResourceInt btn_count = client.define_resource("button/0/clicks", 0, M2MBase::GET_ALLOWED);
+SimpleResourceString pattern = client.define_resource("led/0/pattern", "500:500:500:500:500:500:500", &patternUpdated);
+
+SimpleResourceInt lcd_color = client.define_resource("lcd/0/color", 0x00ff00, &lcdColorUpdated);
+SimpleResourceString lcd_text = client.define_resource("lcd/0/text", "...", &lcdTextUpdated);
+
+SimpleResourceInt acc_x = client.define_resource("accelerometer/0/x", 0, M2MBase::GET_ALLOWED);
+SimpleResourceInt acc_y = client.define_resource("accelerometer/0/y", 0, M2MBase::GET_ALLOWED);
+SimpleResourceInt acc_z = client.define_resource("accelerometer/0/z", 0, M2MBase::GET_ALLOWED);
+
 void lcdColorUpdated(int v) {
     uint8_t r = (v >> 16) & 0xff;
     uint8_t g = (v >> 8) & 0xff;
     uint8_t b = v & 0xff;
 
     oled.setTextColor(oled.Color565(r, g, b));
+    oled.fillScreen(BLACK);
+    oled.printf(static_cast<string>(lcd_text).c_str());
 }
-
-SimpleResourceInt btn_count = client.define_resource("button/0/clicks", 0, M2MBase::GET_ALLOWED);
-SimpleResourceString pattern = client.define_resource("led/0/pattern", "500:500:500:500:500:500:500", &patternUpdated);
-
-SimpleResourceInt lcd_color = client.define_resource("lcd/0/color", 0x00ff000, &lcdColorUpdated);
-SimpleResourceString lcd_text = client.define_resource("lcd/0/text", "...", &lcdTextUpdated);
-
-SimpleResourceInt acc_x = client.define_resource("accelerometer/0/x", 0, M2MBase::GET_ALLOWED);
-SimpleResourceInt acc_y = client.define_resource("accelerometer/0/y", 0, M2MBase::GET_ALLOWED);
-SimpleResourceInt acc_z = client.define_resource("accelerometer/0/z", 0, M2MBase::GET_ALLOWED);
 
 void fall() {
     updates.release();
@@ -64,8 +68,6 @@ void readAccelerometer() {
     acc_x = static_cast<int>(acc_data.x * 1000.0f);
     acc_y = static_cast<int>(acc_data.y * 1000.0f);
     acc_z = static_cast<int>(acc_data.z * 1000.0f);
-
-    pc.printf("data is %d %d %d\r\n", static_cast<int>(acc_x), static_cast<int>(acc_y), static_cast<int>(acc_z));
 }
 
 void registered() {
@@ -97,10 +99,8 @@ int main() {
     oled.begin();
     oled.setRotation(0);
     lcdColorUpdated(lcd_color); // set initial text color
-    oled.setTextWrap(false);
+    oled.setTextWrap(true);
     oled.on();
-    oled.fillScreen(BLACK);
-    oled.printf(static_cast<string>(lcd_text).c_str());
 
     // enable the accelerometer
     acc.enable();
@@ -116,7 +116,7 @@ int main() {
     opts.ServerAddress = MBED_SERVER_ADDRESS;
     bool setup = client.setup(opts, network);
     if (!setup) {
-        printf("Client setup failed\n");
+        pc.printf("Client setup failed\n");
         return 1;
     }
 
@@ -127,7 +127,7 @@ int main() {
         int v = updates.wait(25000);
         if (v == 1) {
             btn_count = btn_count + 1;
-            printf("Button count is now %d\n", static_cast<int>(btn_count));
+            pc.printf("Button count is now %d\n", static_cast<int>(btn_count));
         }
         client.keep_alive();
     }
